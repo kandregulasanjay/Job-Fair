@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Fair</title>
+    <style>
+      
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        form {
+            margin-top: 20px;
+        }
+        
+        input{
+			margin: 10px;
+			border: solid;
+			
+		}
+         
+        #addMessage {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            width: 100%;
+             margin: 20px;
+            padding: 10px;
+            background-color: #e2f0d9;
+            border: 1px solid #96c178;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+            display: none; /* Hide by default */
+        }
+        
+        #deleteMessage {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            width: 100%;
+            padding: 10px;
+            margin: 20px;
+            background-color: yellow;
+            border: 1px solid #96c178;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+            display: none; /* Hide by default */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Job Fair</h1>
+        
+        <!-- Form to add new Job Role -->
+        <form id="addJobForm">
+            <input type="number"id="jobId" placeholder="Job ID" required>
+            <input type="text" id="jobCompany" placeholder="Company" required>
+            <input type="text" id="jobLocation" placeholder="Location" required>
+            <input type="text" id="jobRole" placeholder="Role" required>
+             <input type="text" id="jobQualification" placeholder="Qualification" required>
+              <input type="text" id="jobExperience" placeholder="Experience" required>
+            <button type="text">Add Job</button>
+        </form>
+        
+        <!-- Table to list Job -->
+        <h2>Job List</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Company</th>
+                    <th>Location</th>
+                    <th>Role</th>
+                    <th>Qualification</th>
+                    <th>Experience</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="JobList">
+                <!-- Jobs will be listed here dynamically -->
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Add the Add Job message div here -->
+    <div id="addMessage" style="color: green;"></div>
+    
+    <!-- Add the delete message div here -->
+    <div id="deleteMessage" style="color: green;"></div>
+
+    <script>
+        const addJobForm = document.getElementById("addJobForm");
+        const jobList = document.getElementById("jobList");
+
+        // Function to fetch and update Job list
+        async function fetchAndUpdateJobList() {
+            try {
+                const response = await fetch('/job'); // Change the URL to your backend endpoint
+                const data = await response.json();
+
+                jobList.innerHTML = ''; // Clear the existing list
+
+                data.forEach(job => {
+                    const newRow = `
+                        <tr>
+                            <td>${job.jobId}</td>
+                            <td>${job.Company}</td>
+                            <td>${job.Location}</td>
+                            <td>${job.Role}</td>
+                            <td>${job.Qualification}</td>
+                            <td>${job.Experience}</td>
+                            
+                            <td><button class="deleteBtn">Delete</button></td>
+                        </tr>
+                    `;
+
+                    jobList.innerHTML += newRow;
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Submit form to add new job
+        addJobForm.addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const jobId = document.getElementById("jobId").value;
+            const Company = document.getElementById("Company").value;
+            const Location = document.getElementById("Location").value;
+            const Role = document.getElementById("Role").value;
+            const Qualification = document.getElementById("Qualification").value;
+            const Experience = document.getElementById("Experience").value;
+
+            const newJob = {
+                jobId: jobId,
+                Company: Company,
+                Location: Location,
+                Role:Role,
+                Qualification:Qualification,
+                Experience:Experience               
+            };
+
+            try {
+                const response = await fetch('/job', {  // Change the URL to your backend endpoint
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newJob)
+                });
+
+                if (response.ok) {
+                	showAddSuccessMessage(); // Show the add success message
+                    fetchAndUpdateJobList(); // Update the job list
+                    addJobForm.reset();
+                } else {
+                    console.error('Failed to add job');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        // Fetch and update the job list when the page loads
+        fetchAndUpdateJobList();
+
+        // Handle delete buttons
+       jobList.addEventListener("click", async function (event) {
+    	if (event.target.classList.contains("deleteBtn")) {
+        	const row = event.target.closest("tr");
+        	const jobId = row.querySelector("td:first-child").textContent;
+
+        	try {
+            	const response = await fetch(`/job/${jobId}`, {
+                method: 'DELETE'
+            	});
+
+            if (response.ok) {
+                row.remove(); // Remove the deleted mobile from the UI
+                showDeleteSuccessMessage();
+            } else {
+                console.error('Failed to delete job');
+            }
+        	} catch (error) {
+            console.error('Error:', error);
+        	}
+    		}
+		});
+        
+       function showAddSuccessMessage() {
+    	    const addMessage = document.getElementById("addMessage");
+    	    addMessage.textContent = "Job added successfully!";
+    	    addMessage.style.display = "block"; // Show the message
+
+    	    setTimeout(() => {
+    	        addMessage.textContent = "";
+    	        addMessage.style.display = "none"; // Hide the message
+    	    }, 5000); // Clear message after 5 seconds
+    	}
+
+	function showDeleteSuccessMessage() {
+    	const deleteMessage = document.getElementById("deleteMessage");
+    	deleteMessage.textContent = "Job deleted successfully!";
+    	deleteMessage.style.display = "block"; // Show the message
+    	
+    	setTimeout(() => {
+        	deleteMessage.textContent = "";
+   		 }, 3000); // Clear message after 3 seconds
+	}
+        
+    </script>
+</body>
+</html>
